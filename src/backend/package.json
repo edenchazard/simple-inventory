@@ -1,0 +1,21 @@
+{
+  "name": "dc-auto-refresher-backend",
+  "version": "1.0.0",
+  "description": "backend api server for dc auto refresher",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon server.js",
+    "prod": "node server.js"
+  },
+  "author": "Charley Reeson",
+  "license": "ISC",
+  "dependencies": {
+    "@koa/router": "^10.1.1",
+    "axios": "^0.26.0",
+    "koa": "^2.13.4",
+    "mysql2": "^2.3.3",
+    "nodemon": "^2.0.15",
+    "sql-template-strings": "^2.2.2"
+  }
+}

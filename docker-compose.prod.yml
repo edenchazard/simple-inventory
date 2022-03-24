@@ -1,0 +1,34 @@
+services:
+  prod_api:
+    container_name: dc-ar-api
+    build:
+      context: .
+      dockerfile: ./docker/prod-api.Dockerfile
+    restart: always
+    environment:
+      - NODE_ENV=production
+    networks:
+      - internal
+
+  prod_frontend:
+    container_name: dc-ar-frontend
+    build:
+      context: .
+      dockerfile: ./docker/prod-frontend.Dockerfile
+      args:
+        - PUBLIC_URL=/dc/auto-refresher/
+    ports:
+      - 85:8080
+    depends_on:
+      - prod_api
+    restart: always
+    environment:
+      - NODE_ENV=production
+    networks:
+      - dc
+      - internal
+
+networks:
+  internal:
+  dc:
+    external: true
