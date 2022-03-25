@@ -17,15 +17,16 @@ app.use(async (ctx, next) => {
     }
 });
 
-app
-  .use(router.routes())
-  .use(router.allowedMethods())
-  .listen(config.port);
 
 Globals.pool = mysql.createPool({
     ...config.db,
     waitForConnections: true
 });
+
+app
+  .use(router.routes())
+  .use(router.allowedMethods())
+  .listen(config.port);
 
 process.on('unhandledRejection', (err) => {
     console.log(err);

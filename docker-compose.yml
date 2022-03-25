@@ -50,5 +50,16 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     networks:
       - internal
+  # only for development
+  adminer:
+    image: adminer:latest
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    ports:
+      - 82:8080
+    networks:
+      - internal
 networks:
   internal:
+volumes:
+  dbdata:

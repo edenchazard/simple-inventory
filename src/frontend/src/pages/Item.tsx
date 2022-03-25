@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
-import { useState } from "react";
-import { items } from "../test-data";
+import { useEffect, useState } from "react";
+import { Api } from "../api";
 import {CategoryScale} from 'chart.js';
 import { Chart } from 'react-chartjs-2';
 import { Chart as ChartJS, LineController, LineElement, PointElement, LinearScale, Title } from 'chart.js';
@@ -41,93 +41,131 @@ const CHART = {
         }
     },
 
+    api: {
+        getRange(){
+
+        }
+    },
+
     display:{
-        inDays(daysPrevious: number){
-            const curDate = new Date().toString();
+        async inDays(stockID: number, daysPrevious: number){
+            try{
+                const
+                    curDate = new Date().toString(),
+                    from = CHART.utils.removeDays(curDate, daysPrevious),
+                    records = await fetch(`/api/get-records/${stockID}/${from}/${curDate}`);
 
-            const sum = (dates) => {
-                
+                console.log(records)
+                const sum = (dates) => {
+                    
+                }
+
+                // calculate what dates we need to sum
+                const dates = (() => {
+
+                })();
             }
+            catch(e){
 
-            // calculate what dates we need to sum
-            const dates = (() => {
-
-            })();
+            }
         }
     }
 }
 
 export default function Item(){
-    let params = useParams();
-    const id = params.itemId;
-    let d = items.find((entry) => entry.id == id);
+    const
+        params = useParams(),
+        id = parseInt(params.itemId);
 
-
-
-    const [data] = useState({
+    const [data, setData] = useState({
+        name: null,
         changes: [],
         notes: [],
-        ...d
+        id: null,
+        category: null,
+        minimum: null
     });
 
-    /*function calculateChange(index){
-        const
-            curQuantity = data.changes[index].quantity,
-            prevQuantity = data.changes[index-1]?.quantity || data.changes[0].quantity,
-            change = prevQuantity - curQuantity;
-        return change;
-    }*/
+    const [loaded, setLoaded] = useState(false);
 
-    function sign(value:number): string{
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await Api.fetchItem(id);
+                const json = await response.json();
+                setData({
+                    ...json,
+                    changes: [],
+                    notes: []
+                });
+                setLoaded(true);
+                console.log(json);
+            }
+            catch (error) {
+                console.log("error", error);
+            }
+        };
+    
+        fetchData();
+    }, [id]);
+
+    function sign(value: number): string{
         return (value > 0 ? "+"+value : ""+value)
     }
-    return (
-        <div>
-            <section>
-                <h1>{data.label}</h1>
-                <span>id#{data.id}</span>
-            </section>
-            <section>
-                <h3>Notes</h3>
-                {
-                    data.notes.map((note) => 
-                        <div className="flex items-start">
-                            <div className="mr-5">{note.date}</div>
-                            <p>
-                                {note.text}
-                            </p>
-                        </div>
-                    )
-                }
-            </section>
-            <section>
-                <h3>History</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Data Time</th>
-                            <th>Quantity</th>
-                            <th>Agent</th>
-                            <th>Change</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {
-                            data.changes.map((change, index) =>
-                                <tr>
-                                    <td>{change.dateTime}</td>
-                                    <td>{change.quantity}</td>
-                                    <td>{change.agent}</td>
-                                    <td>{sign(change.change)}</td>
-                                </tr>
-                            )
-                        }
-                    </tbody>
-                </table>
-            </section>
-            <section>                
-                <Chart type='line' data={chartData} />
-            </section>
-        </div>
-    );
+
+    if(loaded){
+        return (
+            <div>
+                <section>
+                    <h1>{data.name}</h1>
+                    <span>id#{data.id} in the category '{data.category.label}'</span>
+                </section>
+                <section>
+                    <h3>Notes</h3>
+                    {
+                        data.notes.map((note) => 
+                            <div className="flex items-start">
+                                <div className="mr-5">{note.date}</div>
+                                <p>
+                                    {note.text}
+                                </p>
+                            </div>
+                        )
+                    }
+                </section>
+                <section>
+                    <h3>History</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data Time</th>
+                                <th>Quantity</th>
+                                <th>Agent</th>
+                                <th>Change</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {
+                                data.changes.map((change, index) =>
+                                    <tr>
+                                        <td>{change.date_time}</td>
+                                        <td>{change.quantity}</td>
+                                        <td>{change.agent}</td>
+                                        <td>{sign(change.adjust)}</td>
+                                    </tr>
+                                )
+                            }
+                        </tbody>
+                    </table>
+                </section>
+                <section>                
+                    
+                </section>
+            </div>
+        );
+    }
+    else{
+        return <div>Loading...</div>;
+    }
 }
+//<Chart type='line' data={chartData} />

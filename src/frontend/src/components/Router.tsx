@@ -2,7 +2,7 @@ import { useRoutes } from "react-router-dom";
 
 import { Item, Inventory, Home, Dashboard } from '../pages/pages';
 
-export const routes = [
+const routes = [
     {
         path: '/',
         element: <Home />
