@@ -9,13 +9,30 @@ router.get('/', (ctx) => {
     ctx.body = "REST API for the lineage builder. You shouldn't be here!";
 });
 
+router.get('/stats', async (ctx) =>{
+    try{
+        const con = await Globals.pool.getConnection();
+        Api.setup(con);
+        const stocksBelowMinimum = await Api.countStocksBelowMin();
+        console.log(stocksBelowMinimum)
+        ctx.body = {
+            stocksBelowMinimum
+        };
+        con.release();
+    }
+
+    catch(err){
+        console.log(err)
+        ctx.status = 500;
+        //ctx.body = { errors: 1, message: "Sorry, an error has occurred." };
+    }
+});
 
 router.get('/stocks', async (ctx) =>{
     try{
         const con = await Globals.pool.getConnection();
         Api.setup(con);
         const stocks = await Api.getStocks();
-        console.log(stocks);
         ctx.body = stocks;
         con.release();
     }
@@ -26,6 +43,7 @@ router.get('/stocks', async (ctx) =>{
         //ctx.body = { errors: 1, message: "Sorry, an error has occurred." };
     }
 });
+
 
 router.get('/stock/:id', async (ctx) => {
     try{
@@ -42,7 +60,7 @@ router.get('/stock/:id', async (ctx) => {
 
         ctx.body = {
             ...info,
-            changes: changes[0],
+            changes,
             notes: []
         };
 

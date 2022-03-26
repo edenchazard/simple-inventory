@@ -1,6 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { Api } from "../api";
+import { useAPI } from "../hooks";
 import {CategoryScale} from 'chart.js';
 import { Chart } from 'react-chartjs-2';
 import { Chart as ChartJS, LineController, LineElement, PointElement, LinearScale, Title } from 'chart.js';
@@ -75,39 +74,8 @@ const CHART = {
 export default function Item(){
     const
         params = useParams(),
-        id = parseInt(params.itemId);
-
-    const [data, setData] = useState({
-        name: null,
-        changes: [],
-        notes: [],
-        id: null,
-        category: null,
-        minimum: null
-    });
-
-    const [loaded, setLoaded] = useState(false);
-
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await Api.fetchItem(id);
-                const json = await response.json();
-                setData({
-                    ...json,
-                    changes: [],
-                    notes: []
-                });
-                setLoaded(true);
-                console.log(json);
-            }
-            catch (error) {
-                console.log("error", error);
-            }
-        };
-    
-        fetchData();
-    }, [id]);
+        id = parseInt(params.itemId),
+        [stock, loaded, error] = useAPI(`/stock/${id}`);
 
     function sign(value: number): string{
         return (value > 0 ? "+"+value : ""+value)
@@ -117,13 +85,13 @@ export default function Item(){
         return (
             <div>
                 <section>
-                    <h1>{data.name}</h1>
-                    <span>id#{data.id} in the category '{data.category.label}'</span>
+                    <h1>{stock.name}</h1>
+                    <span>id#{stock.id} in the category '{stock.category.label}'</span>
                 </section>
                 <section>
                     <h3>Notes</h3>
                     {
-                        data.notes.map((note) => 
+                        stock.notes.map((note) => 
                             <div className="flex items-start">
                                 <div className="mr-5">{note.date}</div>
                                 <p>
@@ -138,7 +106,7 @@ export default function Item(){
                     <table>
                         <thead>
                             <tr>
-                                <th>Data Time</th>
+                                <th>Date Time</th>
                                 <th>Quantity</th>
                                 <th>Agent</th>
                                 <th>Change</th>
@@ -146,11 +114,11 @@ export default function Item(){
                         </thead>
                         <tbody>
                             {
-                                data.changes.map((change, index) =>
-                                    <tr>
+                                stock.changes.map((change, index) =>
+                                    <tr key={index}>
                                         <td>{change.date_time}</td>
                                         <td>{change.quantity}</td>
-                                        <td>{change.agent}</td>
+                                        <td>{change.agent.first_name} {change.agent.last_name}</td>
                                         <td>{sign(change.adjust)}</td>
                                     </tr>
                                 )

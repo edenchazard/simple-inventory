@@ -12,20 +12,60 @@ const Api ={
     },
 
     getRangeRecordsForStock(id, to = null, from = null){
-        let
-            q = "SELECT * FROM changes WHERE id = ?",
-            values = [id];
+        return new Promise(async (resolve, reject) =>{
+            try {
+                let
+                    q = `
+                    SELECT changes.*, agents.first_name, agents.last_name
+                    FROM changes
+                    LEFT JOIN agents
+                    ON changes.agentID = agents.id
+                    WHERE stockID = ?`,
+                    values = [id];
 
-        if(from && to){
-            if(!Utils.validators.date(from) || !Utils.validators.date(to)){
-                throw new Error("Date doesn't fit required format.");
+                if(from){
+                    if(!Utils.validators.date(from)){
+                        throw new Error("Date doesn't fit required format.");
+                    }
+
+                    q += " AND date >= ?";
+                    values += [from];
+                }
+
+                if(to){
+                    if(!Utils.validators.date(to)){
+                        throw new Error("Date doesn't fit required format.");
+                    }
+
+                    q += " AND date <= ?";
+                    values += [to];
+                }
+
+                const query = await this.con.execute(q, values);
+                const format = (entry) => {
+                    const {
+                        stockID, date_time, adjust,
+                        agentID, first_name, last_name
+                    } = entry;
+    
+                    return {
+                        stockID,
+                        date_time,
+                        adjust,
+                        agent: {
+                            id: agentID,
+                            first_name,
+                            last_name
+                        }
+                    };
+                }
+                const r = query[0].map(row => format(row));
+                resolve(r)
             }
-
-            q += "AND date >= ? AND date <= ?";
-            values += [from, to];
-        }
-
-        return this.con.execute(q, values);
+            catch (error) {
+                reject();
+            }
+        });
     },
 
     // return all stocks
@@ -49,8 +89,9 @@ const Api ={
                 const query = await this.con.execute(q, values);
 
                 const format = (row) => {
-                    const { id, category, label, minimum, name } = row;
+                    const { id, quantity, category, label, minimum, name } = row;
                     return {
+                        quantity,
                         id,
                         category: { id: category, label },
                         name,
@@ -63,6 +104,18 @@ const Api ={
                 resolve(rows.length > 1 ? rows : rows[0]);
             }
             catch(e){
+                reject();
+            }
+        });
+    },
+
+    countStocksBelowMin(){
+        return new Promise(async (resolve, reject) =>{
+            try {
+                const query = await this.con.execute("SELECT COUNT(*) AS n FROM stocks WHERE quantity < minimum");
+                resolve(query[0][0].n);
+            }
+            catch (error) {
                 reject();
             }
         });

@@ -17,7 +17,7 @@ const columns = [
     },
     {
         headerName: "Minimum",
-        field: 'min'
+        field: 'minimum'
     },
     {
         field: "category"
