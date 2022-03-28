@@ -3,13 +3,12 @@ const Utils = require("../Utils");
 module.exports = {
     async getRangeRecordsForStock(id, to = null, from = null){
         let
-            q = `
+            sql = `
             SELECT adjustments.*, agents.first_name, agents.last_name
             FROM adjustments
             LEFT JOIN agents
             ON adjustments.agentID = agents.agentID
-            WHERE stockID = ?
-            ORDER BY id DESC`,
+            WHERE stockID = ?`,
             values = [id];
 
         if(from){
@@ -17,7 +16,7 @@ module.exports = {
                 throw new Error("Date doesn't fit required format.");
             }
 
-            q += " AND date >= ?";
+            sql += " AND date >= ?";
             values += [from];
         }
 
@@ -26,16 +25,17 @@ module.exports = {
                 throw new Error("Date doesn't fit required format.");
             }
 
-            q += " AND date <= ?";
+            sql += " AND date <= ?";
             values += [to];
         }
 
-        const query = await this.con.execute(q, values);
-        const format = (entry) => {
-            const {
-                stockID, date_time, adjust, quantity,
-                agentID, first_name, last_name
-            } = entry;
+        sql += " ORDER BY id DESC";
+    
+        const query = await this.con.execute(sql, values);
+
+        return query[0].map((entry) => {
+            const {stockID, date_time, adjust, quantity, agentID, first_name,
+                    last_name} = entry;
 
             return {
                 stockID,
@@ -48,8 +48,7 @@ module.exports = {
                     last_name
                 }
             };
-        }
-        return query[0].map(row => format(row));
+        });
     },
 
     // return all stocks
@@ -128,5 +127,28 @@ module.exports = {
         ]);
 
         return add[0].insertId;
+    },
+
+    async getStockLevels(stockID){
+        // fetch the max level of the stock every hour
+        // because this query won't return hours where
+        // there's no records, we'll fill in the blanks
+        const sql = `select date_time, MAX(quantity) AS high
+        FROM adjustments
+        WHERE stockID = ?
+        AND date_time >= curdate() 
+        GROUP BY hour(date_time)
+        ORDER BY NULL`;
+
+        const query = await this.con.execute(sql, [stockID]);
+
+        // generate array with defaults
+
+        const periods = [];
+        for(let i = 1; i < 25; i++){
+
+        }
+        const hours = Array.from(Array(24).keys()).map(k => { return { period: k, high: null }});
+
     }
 }
