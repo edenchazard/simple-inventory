@@ -1,25 +1,27 @@
-import './App.css';
-import { useState } from 'react';
 import { BrowserRouter } from "react-router-dom";
-
-// components
+import { useAPI, UserContext } from './hooks';
+import './App.css';
 import { Header } from './components/ui/ui';
 import Router from './components/Router';
 
-import { user } from './test-data';
-
-
 export default function App() {
-    const [loggedIn] = useState(user);
+    const [user, loaded, error] = useAPI(`/user`);
 
-    return (
-        <div>
-            <BrowserRouter>
-                <Header user={loggedIn}/>
-                <main className='p-5'>
-                    <Router />
-                </main>
-            </BrowserRouter>
-        </div>
-    );
+    if(loaded){
+        return (
+            <div>
+                <UserContext.Provider value={user}>
+                    <BrowserRouter>
+                        <Header user={user}/>
+                        <main className='p-5'>
+                            <Router />
+                        </main>
+                    </BrowserRouter>     
+                </UserContext.Provider>
+            </div>
+        )
+    }
+    else{
+        return <div>Loading...</div>;
+    }
 }

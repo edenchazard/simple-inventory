@@ -1,3 +1,13 @@
 .ag-row-even{
     background-color: rgb(51 65 85);
 }
+.within-threshold{
+    background-color: rgb(254 240 138) !important;
+    color:#000 !important;
+}
+/* this needs to come after within threshold 
+because of the way ag grid evaluates class rules */
+.below-minimum{
+    background-color: rgb(252 165 165) !important;
+    color:#000 !important;
+}

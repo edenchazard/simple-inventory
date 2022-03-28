@@ -1,6 +1,6 @@
 import { useRoutes } from "react-router-dom";
 
-import { Item, Inventory, Home, Dashboard } from '../pages/pages';
+import { Item, Inventory, Home, Dashboard, UserProfile } from '../pages/pages';
 
 const routes = [
     {
@@ -18,6 +18,10 @@ const routes = [
     {
         path: "inventory/:itemId",
         element: <Item />
+    },
+    {
+        path: "profile",
+        element: <UserProfile />
     }
 ];
 

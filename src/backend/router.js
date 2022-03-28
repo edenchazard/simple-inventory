@@ -1,100 +1,107 @@
 const Router = require('@koa/router');
-const Api = require("./api");
-const config = require('./config');
+
+const Api = require("./api/api");
 const Globals = require('./globals');
+const { apiPath } = require('./config');
 
-const router = new Router({ prefix: config.apiPath });
+const router = new Router({ prefix: apiPath });
 
-router.get('/', (ctx) => {
-    ctx.body = "REST API for the lineage builder. You shouldn't be here!";
+router.use(async (ctx, next) => {
+    try {
+        const con = await Globals.pool.getConnection();
+        Api.setup(con);
+        await next();
+        Api.con.release();
+    }
+    catch(err) {
+        console.log(err)
+        ctx.status = err.status || 500;
+        ctx.body = err.message;
+    }
+});
+
+router.get('/', async (ctx) => {
+    ctx.body = `
+        Congratulations, you've found the backend for simple inventory.
+        Why not celebrate with a cookie?`;
+});
+
+router.get('/user', async (ctx) =>{
+    const userID = 1;
+    const [user, permissions] = await Promise.all([
+        Api.getUser(userID),
+        Api.getPermissionsForUser(userID)
+    ]);
+
+    ctx.body = {
+        ...user,
+        permissions
+    };
 });
 
 router.get('/stats', async (ctx) =>{
-    try{
-        const con = await Globals.pool.getConnection();
-        Api.setup(con);
-        const stocksBelowMinimum = await Api.countStocksBelowMin();
-        console.log(stocksBelowMinimum)
-        ctx.body = {
-            stocksBelowMinimum
-        };
-        con.release();
-    }
+    const [
+        stocksBelowMinimum, stocksWithinThreshold,
+        totalStocks, changesToday] = await Promise.all([
+        Api.countStocksBelowMin(),
+        Api.countStocksWithinThreshold(),
+        Api.countStocks(),
+        Api.getTodaysChanges()
+    ]);
 
-    catch(err){
-        console.log(err)
-        ctx.status = 500;
-        //ctx.body = { errors: 1, message: "Sorry, an error has occurred." };
-    }
+    ctx.body = {
+        dash:{
+            stocksBelowMinimum,
+            stocksWithinThreshold,
+            totalStocks,
+            changesToday
+        },
+        other:{
+            version: Api.getVersion()
+        }
+    };
 });
 
 router.get('/stocks', async (ctx) =>{
-    try{
-        const con = await Globals.pool.getConnection();
-        Api.setup(con);
-        const stocks = await Api.getStocks();
-        ctx.body = stocks;
-        con.release();
-    }
-
-    catch(err){
-        console.log(err)
-        ctx.status = 500;
-        //ctx.body = { errors: 1, message: "Sorry, an error has occurred." };
-    }
+    const stocks = await Api.getStocks();
+    ctx.body = stocks;
 });
 
+router.get('/stock/:stockID', async (ctx) => {
+    const {stockID} = ctx.params;
+    const [info, changes] = await Promise.all([
+        Api.getStocks(stockID),
+        Api.getRangeRecordsForStock(stockID)
+    ]);
 
-router.get('/stock/:id', async (ctx) => {
-    try{
-        const
-            { id } = ctx.params,
-            con = await Globals.pool.getConnection();
-
-        Api.setup(con);
-
-        const [info, changes] = await Promise.all([
-            Api.getStocks(id),
-            Api.getRangeRecordsForStock(id)
-        ]);
-
-        ctx.body = {
-            ...info,
-            changes,
-            notes: []
-        };
-
-        con.release();
-    }
-
-    catch(err){
-        console.log(err)
-        ctx.status = 500;
-        //ctx.body = { errors: 1, message: "Sorry, an error has occurred." };
-    }
+    ctx.body = {
+        ...info,
+        changes,
+        notes: []
+    };
 });
 
-router.get('/stock/:id/range/:from/:to', async (ctx) => {
-    try{
-        const
-            { id, from, to } = ctx.params,
-            con = await Globals.pool.getConnection();
+router.post("/stock/:stockID/adjustments/add", async (ctx) =>{
+    const
+        {adjustment} = ctx.request.body,
+        {stockID} = ctx.params;
 
-        Api.setup(con);
+    const adjustmentID = await Api.addAdjustment(stockID, adjustment, 1);
 
-        const records = Api.getRangeRecordsForStock(id, from, to);
+    ctx.body ={
+        adjustmentID
+    };
+});
 
-        console.log(records);
+router.get('/stock/:stockID/adjustments/range', async (ctx) => {
+    const
+        {stockID} = ctx.request.params,
+        {from, to} = ctx.request.query,
+        records = Api.getRangeRecordsForStock(stockID, from, to);
 
-        ctx.body = records;
-        con.release();
-    }
+    console.log(records);
 
-    catch(err){
-        console.log(err)
-        ctx.status = 500;
-        //ctx.body = { errors: 1, message: "Sorry, an error has occurred." };
-    }
+    ctx.body = records;
 });
 
 module.exports = router;

@@ -1,10 +1,15 @@
-const Koa = require('koa');
-const router = require('./router');
-const config = require('./config.js');
+// modules
 const mysql = require('mysql2/promise');
 
-const app = new Koa();
+// globals
+const config = require('./config.js');
 let Globals = require('./globals.js');
+
+// koa
+const Koa = require('koa');
+const bodyParser = require('koa-bodyparser');
+const router = require('./router');
+const app = new Koa();
 
 app.use(async (ctx, next) => {
     try {
@@ -20,13 +25,15 @@ app.use(async (ctx, next) => {
 
 Globals.pool = mysql.createPool({
     ...config.db,
-    waitForConnections: true
+    waitForConnections: true,
+    timezone: 'Z'
 });
 
 app
-  .use(router.routes())
-  .use(router.allowedMethods())
-  .listen(config.port);
+    .use(bodyParser())
+    .use(router.routes())
+    .use(router.allowedMethods())
+    .listen(config.port);
 
 process.on('unhandledRejection', (err) => {
     console.log(err);
