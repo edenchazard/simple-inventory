@@ -1,8 +1,9 @@
-import { useContext, useState } from "react";
+import { useContext } from "react";
 import { useParams } from "react-router-dom";
 import { useAPI, UserContext } from "../hooks";
 import { Stock } from "../interfaces";
 import AddAdjustmentForm from "../components/AddAdjustmentForm";
+import ChartyBoy from "../components/ChartyBoy";
 
 function sign(value: number): string{
     return (value > 0 ? "+"+value : ""+value)
@@ -17,9 +18,8 @@ export default function Item(){
     const
         params = useParams(),
         id = parseInt(params.itemId),
-        [stock, loaded, error]: [Stock, boolean, any] = useAPI(`/stock/${id}`);
-
-    const user = useContext(UserContext);
+        [stock, loaded, error]: [Stock, boolean, any] = useAPI(`/stock/${id}`),
+        user = useContext(UserContext);
 
     if(loaded){
         return (
@@ -73,8 +73,8 @@ export default function Item(){
                         </tbody>
                     </table>
                 </section>
-                <section>                
-                    
+                <section>
+                    <ChartyBoy stockID={id} />
                 </section>
             </div>
         );

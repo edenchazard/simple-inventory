@@ -19,6 +19,21 @@ const Utils = {
             await con.rollback();
             throw new Error("DATABASE rolled back");
         }
+    },
+
+    formatDate(date) {
+        const padTo2Digits = (num) => num.toString().padStart(2, '0');
+
+        return (
+            date.getFullYear() + '-' +
+            [
+                date.getMonth() + 1,
+                date.getDate()].map(padTo2Digits).join('-') +' '+
+            [
+                date.getHours(),
+                date.getMinutes(),
+                date.getSeconds()].map(padTo2Digits).join(':')
+        );
     }
 }
 

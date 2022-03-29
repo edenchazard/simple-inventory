@@ -104,4 +104,12 @@ router.get('/stock/:stockID/adjustments/range', async (ctx) => {
     ctx.body = records;
 });
 
+router.get('/stocks/:stockID/level/24hours', async (ctx) => {
+    const
+        {stockID} = ctx.request.params,
+        records = await Api.getStockLevels(stockID);
+
+    console.log(records)
+    ctx.body = records;
+});
 module.exports = router;
