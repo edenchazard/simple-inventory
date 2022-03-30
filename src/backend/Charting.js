@@ -82,11 +82,11 @@ class Chart {
 
     fillGaps(){
         if(!this.fixedPoints){
-            throw new Error("fixed points not set")
+            throw new Error("fixed points not set");
         }
 
         if(!this.data){
-            throw new Error("no initial data set")
+            throw new Error("no initial data set");
         }
 
         let index = 0;
