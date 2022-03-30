@@ -56,6 +56,7 @@ export default function ChartyBoy({stockID}){
             const response = await fetchAPI(`/stocks/${stockID}/level/24hours`);
             const data = await response.json();
 
+            console.log(data)
             setChartData({
                 ...chartDefaults,
                 labels: data.map(d => new Date(d.period).getHours()),
@@ -64,7 +65,10 @@ export default function ChartyBoy({stockID}){
                   data: data.map(d => d.quantity),
                   fill: false,
                   borderColor: 'rgb(75, 192, 192)',
-                  tension: 0
+                  tension: 0,
+                  // TS complains about this but it actually works...
+                  // @ts-ignore
+                  stepped: true
                 }]
               });
         })();

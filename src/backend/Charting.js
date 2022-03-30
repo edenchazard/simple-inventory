@@ -1,7 +1,8 @@
 const {formatDate} = require("./Utils");
 
 const Charting = {
-    async hour24(dbcon, stockID, to = new Date()){
+    // from and to must be Date objects
+    async hourly(dbcon, stockID, from, to){
         // the idea here is we find the datetime one full day before the
         // specified date (defaults to today) and then
         // fetch the max level of the stock every hour
@@ -23,42 +24,26 @@ const Charting = {
         )
         ORDER BY date_time DESC`;
 
-        // ensure it's a date obj
-        if(typeof to == "string"){
-            to = new Date(to);
-        }
-
-        // subtract one day from our date to create the minimum part (to)
-        // of the range
-        from = new Date(to);
-        // amend this so we aren't limited to 23 hours before our to
-        from.setHours(from.getHours() - 23);
-
         // format as y-m-d h:i:s
-        from = formatDate(from);
-        to = formatDate(to);
-        console.log('beginning from ', from, "to", to);
-
-        const query = await dbcon.execute(sql, [stockID, from, to]);
+        const query = await dbcon.execute(sql, [stockID, formatDate(from), formatDate(to)]);
 
         const a = performance.now();
-        const chart = new Chart();
-
-        chart.make(periodsLast24Hours(to), query[0], date =>{
+        const chart = new Chart(generateHourlyRange(from, to), query[0], date =>{
             const y = new Date(date);
             y.setMinutes(0, 0, 0);
             return y.toISOString();
-        })
+        });
 
-        console.log("time taken", performance.now() - a)
-        console.log(chart.data)
+        console.log("time taken", performance.now() - a);
         return chart.data;
     }
 }
 class Chart {
-    constructor(){
-        this.data = [];
-        this.fixedPoints = [];
+    constructor(fill, fixedPoints, neutralizeFunction){
+        this.setFill(fill);
+        this.setFixedPoints(fixedPoints);
+        this.applyFixedPoints(neutralizeFunction);
+        this.fillGaps();
     }
 
     setFill(data){
@@ -79,10 +64,19 @@ class Chart {
             throw new Error("no initial data set")
         }
 
+        //console.log("fixed", this.fixedPoints);
+        //console.log("filled", this.data)
         this.fixedPoints.forEach(fixed =>{
             const period = neutralizeFunction(fixed.date_time);
+            //console.log("ah", period)
             const index = this.data.findIndex((p) => p.period == period);
-            this.data[index].quantity = fixed.quantity;
+            // bug fix
+            if(index !== -1){
+                this.data[index].quantity = fixed.quantity;
+            }
+            else{
+                this.data.push({ period, quantity: fixed.quantity })
+            }
         });
     }
 
@@ -112,31 +106,24 @@ class Chart {
             }
         }
     }
-
-    make(fill, fixedPoints, neutralizeFunction){
-        this.setFill(fill);
-        this.setFixedPoints(fixedPoints);
-        this.applyFixedPoints(neutralizeFunction);
-        this.fillGaps();
-    }
 }
 
 // create an array of dates starting from our 
-// 'to' point and descend downwards 24 hours
-const periodsLast24Hours = (endDate) => {
+// 'to' point and descend downwards until we match
+// our beginning datetime
+const generateHourlyRange = (beginDate, endDate) => {
     let arr = [];
 
-    const y = new Date(endDate);
+    const cur = new Date(endDate.getTime());
 
-    // neutralize date by removing s, m, ms
-    y.setMinutes(0, 0, 0);
+    // neutralize date by zeroing s, m, ms
+    cur.setMinutes(0, 0, 0);
 
-    for(let i = 0; i < 23; i++){
-        arr.push({
-            period: y.toISOString(),
-            quantity: null
-        });
-        y.setHours(y.getHours() - 1);
+    const begin = beginDate.getTime();
+    //console.log(beginDate.toISOString(), ' TO ', endDate.toISOString())
+    while(cur.getTime() > begin){
+        arr.push({ period: cur.toISOString(), quantity: null });
+        cur.setHours(cur.getHours() - 1);
     }
 
     return arr;

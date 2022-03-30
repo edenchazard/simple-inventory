@@ -105,11 +105,20 @@ router.get('/stock/:stockID/adjustments/range', async (ctx) => {
 });
 
 router.get('/stocks/:stockID/level/24hours', async (ctx) => {
+    const to = new Date();
+    // subtract one day from our date to create the minimum part (to)
+    // of the range
+    const from = new Date(to);
+    // amend this so we aren't limited to 23 hours before our to
+    from.setHours(to.getHours() - 24);
+    //console.log(from.toISOString(), ' TO ', to.toISOString())
+
     const
         {stockID} = ctx.request.params,
-        records = await Api.getStockLevels(stockID);
+        records = await Api.getStockLevels(stockID, from, to);
 
     console.log(records)
     ctx.body = records;
 });
+
 module.exports = router;

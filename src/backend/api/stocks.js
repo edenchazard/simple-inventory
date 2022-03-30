@@ -130,7 +130,7 @@ module.exports = {
         return add[0].insertId;
     },
 
-    async getStockLevels(stockID, from = new Date()){
-        return Charting.hour24(this.con, stockID, from);
+    async getStockLevels(stockID, from, to){
+        return Charting.hourly(this.con, stockID, from, to);
     }
 }
