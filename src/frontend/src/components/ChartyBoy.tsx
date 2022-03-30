@@ -58,7 +58,7 @@ export default function ChartyBoy({stockID}){
 
             setChartData({
                 ...chartDefaults,
-                labels: data.map(d => d.period),
+                labels: data.map(d => new Date(d.period).getHours()),
                 datasets: [{
                   label: 'My First Dataset',
                   data: data.map(d => d.quantity),
