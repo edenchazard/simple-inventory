@@ -1,5 +1,6 @@
 services:
   api:
+    container_name: dev-simple-inventory-api
     build:
       context: .
       dockerfile: ./docker/api.Dockerfile
@@ -20,6 +21,7 @@ services:
       - 3001:80
     restart: unless-stopped
   frontend:
+    container_name: dev-simple-inventory-frontend
     build:
       context: .
       dockerfile: ./docker/frontend.Dockerfile
@@ -37,6 +39,7 @@ services:
       - internal
     restart: unless-stopped
   db:
+    container_name: dev-simple-inventory-db
     image: mariadb:10.6
     restart: unless-stopped
     tty: true
