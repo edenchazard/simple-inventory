@@ -1,4 +1,5 @@
 const Utils = require("../Utils");
+const Charting = require("../Charting");
 
 module.exports = {
     async getRangeRecordsForStock(id, to = null, from = null){
@@ -129,26 +130,7 @@ module.exports = {
         return add[0].insertId;
     },
 
-    async getStockLevels(stockID){
-        // fetch the max level of the stock every hour
-        // because this query won't return hours where
-        // there's no records, we'll fill in the blanks
-        const sql = `select date_time, MAX(quantity) AS high
-        FROM adjustments
-        WHERE stockID = ?
-        AND date_time >= curdate() 
-        GROUP BY hour(date_time)
-        ORDER BY NULL`;
-
-        const query = await this.con.execute(sql, [stockID]);
-
-        // generate array with defaults
-
-        const periods = [];
-        for(let i = 1; i < 25; i++){
-
-        }
-        const hours = Array.from(Array(24).keys()).map(k => { return { period: k, high: null }});
-
+    async getStockLevels(stockID, from = new Date()){
+        return Charting.hour24(this.con, stockID, from);
     }
 }
